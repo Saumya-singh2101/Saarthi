@@ -33,11 +33,8 @@ def generate_continuity_report(prompt):
             ],
 
             temperature=0.2,
-
-            response_format={
-                "type": "json_object"
-            }
-
+            max_tokens=2048,
+            response_format={"type": "json_object"},
         )
 
         result = completion.choices[0].message.content
@@ -58,6 +55,3 @@ def generate_continuity_report(prompt):
     # WRAPPER for pipeline compatibility
 def get_llm_response(prompt):
     return generate_continuity_report(prompt)
-
-print("API KEY LOADED:", bool(os.getenv("GROQ_API_KEY")))
-print("MODEL:", os.getenv("MODEL_NAME"))
