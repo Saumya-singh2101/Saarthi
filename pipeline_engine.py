@@ -6,10 +6,9 @@ from prompt_builder import build_prompt
 from groq_client import get_llm_response
 
 
-def run_pipeline(patient_id, query):
-
+def run_pipeline(health_card_id, query):
     # 1. Get patient data
-    context = build_context(patient_id)
+    context = build_context(health_card_id)
 
     # 2. Risk analysis
     risk_data = analyze_risk(context)
@@ -30,6 +29,7 @@ def run_pipeline(patient_id, query):
     result = {
         "summary":           raw_response.get("summary", ""),
         "relevant_history":  raw_response.get("relevant_history", []),
+        "current_medications": [m.get("name", "") for m in context.get("medications", [])],
         "red_flags":         raw_response.get("red_flags", []),
         "suggested_tests":   raw_response.get("suggested_tests", []),
         "drug_interactions": interactions,          # deterministic, NOT LLM-guessed

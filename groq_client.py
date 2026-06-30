@@ -1,5 +1,7 @@
 import os
 import json
+import logging
+logger = logging.getLogger("saarthi")
 
 from groq import Groq
 from dotenv import load_dotenv
@@ -43,7 +45,7 @@ def generate_continuity_report(prompt):
 
     except Exception as e:
 
-        print(e)
+        logger.error("Groq report generation failed: %s", e)
 
         return {
             "summary": "Unable to generate report.",
