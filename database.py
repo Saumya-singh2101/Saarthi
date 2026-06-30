@@ -61,3 +61,14 @@ def get_current_medications(patient_id: str):
     )
 
     return response.data if response.data else []
+
+def get_patient_by_card(card_id: str):
+    response = (
+        supabase.table("patients")
+        .select("*")
+        .eq("health_card_id", card_id)
+        .execute()
+    )
+    if response.data:
+        return response.data[0]
+    return None

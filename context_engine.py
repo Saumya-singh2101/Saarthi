@@ -27,21 +27,28 @@ def extract_relevant_history(history, symptoms):
         relevant = history
 
     return relevant
+
+# context_engine.py
 # context_engine.py
 
-def build_context(patient_id):
-    """
-    Temporary mock context for testing Feature 1
-    Replace later with Supabase logic if needed
-    """
+from database import get_patient_by_card, get_history, get_current_medications
+
+def build_context(health_card_id):
+    patient = get_patient_by_card(health_card_id) or {}
+    patient_uuid = patient.get("patient_id")
+
+    raw_history = get_history(patient_uuid) if patient_uuid else []
+    raw_meds = get_current_medications(patient_uuid) if patient_uuid else []
+
+    history = [{"disease_name": h.get("disease_name", "")} for h in raw_history]
+    medications = [{"name": m.get("medicine_name", "")} for m in raw_meds]
 
     return {
-        "patient_id": patient_id,
-        "medications": [
-            {"name": "Warfarin"},
-            {"name": "Ibuprofen"}
-        ],
-        "history": {
-            "conditions": ["hypertension"]
-        }
+        "patient_id": patient_uuid,
+        "patient": {
+            "full_name": patient.get("full_name", "Unknown"),
+            "age": patient.get("age", "Unknown"),
+        },
+        "history": history,
+        "medications": medications,
     }

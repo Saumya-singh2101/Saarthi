@@ -4,7 +4,9 @@ def build_prompt(context, risk_data, rag_data, query):
     history = context.get("history", [])
     medicines = context.get("medications", [])
 
-    disease_history = "\n".join(history) if history else "None"
+    disease_history = "\n".join(
+        h.get("disease_name", "") for h in history
+    ) if history else "None"
 
     medication_list = "\n".join(
         [m.get("name", "") for m in medicines]
