@@ -7,6 +7,8 @@ class ContinuityRequest(BaseModel):
 class ContinuityResponse(BaseModel):
     summary: str
     relevant_history: list = []
+    allergies: list = []
+    allergy_alerts: list = []
     current_medications: list = []
     red_flags: list = []
     suggested_tests: list = []
