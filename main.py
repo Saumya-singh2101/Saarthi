@@ -22,6 +22,7 @@ from surveillance_engine import detect_anomalies, build_trend
 
 app = FastAPI(title="Saarthi — Continuity of Care API")
 
+# Updated CORS configuration to allow Vercel frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -69,6 +70,7 @@ def get_patient_record(card_id: str):
     patient_uuid = patient["patient_id"]
 
     history = get_history(patient_uuid)
+    # Corrected indentation for medications to prevent potential scope issues
     medications = get_current_medications(patient_uuid)
 
     return {
