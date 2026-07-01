@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://saarthi-3ytp.onrender.com";
 
 export async function getPatientRecord(cardId) {
   const res = await fetch(`${API_BASE}/patient/${encodeURIComponent(cardId)}`);
