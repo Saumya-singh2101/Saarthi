@@ -1,12 +1,18 @@
 def build_prompt(context, risk_data, rag_data, query):
 
     patient = context.get("patient", {})
+    allergies = patient.get("allergies", [])
+    allergy_text = ", ".join(allergies) if allergies else "None reported"
     history = context.get("history", [])
     medicines = context.get("medications", [])
 
+    sorted_history = sorted(
+        history, key=lambda h: h.get("diagnosis_date", "")
+    ) if history else []
     disease_history = "\n".join(
-        h.get("disease_name", "") for h in history
-    ) if history else "None"
+        f"{h.get('diagnosis_date', 'date unknown')}: {h.get('disease_name', '')}"
+        for h in sorted_history
+    ) if sorted_history else "None"
 
     medication_list = "\n".join(
         [m.get("name", "") for m in medicines]
@@ -34,6 +40,9 @@ Relevant Medical History:
 Current Medications:
 {medication_list}
 
+Known Allergies:
+{allergy_text}
+
 Risk Flags:
 {risk_text}
 
@@ -43,9 +52,12 @@ RAG Context:
 Return JSON ONLY with:
 summary,
 relevant_history,
+allergy_alerts,
 red_flags,
 suggested_tests,
 drug_interactions
+
+If any current medication, suggested test, or treatment could conflict with the patient's known allergies, include a clear explanation in allergy_alerts.
 
 Do NOT diagnose.
 """

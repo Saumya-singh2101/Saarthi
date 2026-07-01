@@ -28,3 +28,19 @@ export async function translateText(text, targetLanguage) {
   if (!res.ok) throw new Error("Translation failed.");
   return (await res.json()).translated;
 }
+
+export async function getSurveillance() {
+  const res = await fetch(`${API_BASE}/surveillance`);
+  if (!res.ok) throw new Error("Couldn't load surveillance data.");
+  return res.json();
+}
+
+export async function translateRecord(payload, targetLanguage) {
+  const res = await fetch(`${API_BASE}/translate-record`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ payload, target_language: targetLanguage }),
+  });
+  if (!res.ok) throw new Error("Record translation failed.");
+  return (await res.json()).translated;
+}

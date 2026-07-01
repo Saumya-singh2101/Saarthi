@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { getPatientRecord, generateReport, translateText } from "./api";
+import { getPatientRecord, generateReport, translateText, translateRecord, } from "./api";
 import QrScanner from "./QrScanner";
 import { supabase } from "./supabase";
 import Login from "./Login";
+import Surveillance from "./Surveillance";
 
 export default function App() {
   const [cardId, setCardId] = useState("");
@@ -19,6 +20,8 @@ export default function App() {
   const [translatedSummary, setTranslatedSummary] = useState("");
   const [translating, setTranslating] = useState(false);
   const [activeLang, setActiveLang] = useState("English");
+  const [view, setView] = useState("console"); // "console" | "surveillance"
+  const [translatedReport, setTranslatedReport] = useState(null);
 
   useEffect(() => {
   supabase.auth.getSession().then(({ data }) => {
@@ -57,6 +60,7 @@ export default function App() {
       const data = await generateReport(cardId.trim(), symptoms.trim());
       setReport(data.data);
       setTranslatedSummary(""); 
+      setTranslatedReport(null); 
       setActiveLang("English");
     } catch (e) { setError(e.message); }
     finally { setLoadingReport(false); }
@@ -64,10 +68,21 @@ export default function App() {
 
   async function handleTranslate(lang) {
     setActiveLang(lang);
-    if (lang === "English") { setTranslatedSummary(""); return; }
+    if (lang === "English") { setTranslatedSummary(""); setTranslatedReport(null); return; }
     setTranslating(true);
     try {
-      setTranslatedSummary(await translateText(report.summary, lang));
+      const [summary, fields] = await Promise.all([
+        translateText(report.summary, lang),
+        translateRecord({
+          relevant_history: report.relevant_history || [],
+          red_flags: report.red_flags || [],
+          suggested_tests: report.suggested_tests || [],
+          allergy_alerts: report.allergy_alerts || [],
+          interaction_risks: (report.drug_interactions || []).map((d) => d.risk),
+        }, lang),
+      ]);
+      setTranslatedSummary(summary);
+      setTranslatedReport(fields);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -133,148 +148,188 @@ export default function App() {
                 : "Patient View"}
             </p>
           </div>
+          <nav className="topnav">
+            <button
+              className={view === "console" ? "navbtn active" : "navbtn"}
+              onClick={() => setView("console")}
+            >
+              Patient Console
+            </button>
+
+            <button
+              className={view === "surveillance" ? "navbtn active" : "navbtn"}
+              onClick={() => setView("surveillance")}
+            >
+              Surveillance
+            </button>
+          </nav>
+
           <button
-          className="logout"
-          onClick={handleLogout}
+            className="logout"
+            onClick={handleLogout}
           >
             Sign out
           </button>
         </div>
-</header>
+      </header>
 
       <main className="container">
-        <section className="card">
-          <label>Health Card ID</label>
-          <div className="lookup-row">
-            <input
-              value={cardId}
-              onChange={(e) => setCardId(e.target.value)}
-              placeholder="e.g. SHC-7K42-9QX"
-              onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-            />
-            <button onClick={() => handleLookup()} disabled={loadingRecord}>
-              {loadingRecord ? "Looking up…" : "Look up record"}
-            </button>
+        {view === "surveillance" ? (
+          <Surveillance />
+        ) : (
+          <>
+            <section className="card">
+              <label>Health Card ID</label>
+              <div className="lookup-row">
+                <input
+                  value={cardId}
+                  onChange={(e) => setCardId(e.target.value)}
+                  placeholder="e.g. SHC-7K42-9QX"
+                  onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+                />
+                <button onClick={() => handleLookup()} disabled={loadingRecord}>
+                  {loadingRecord ? "Looking up…" : "Look up record"}
+                </button>
 
-            <button
-              className="scan-btn"
-              onClick={() => setShowScanner(true)}
-            >
-              Scan QR
-            </button>
-          </div>
-          <p className="hint">In the live product, this comes from a QR scan.</p>
-        </section>
-
-        {error && <div className="error">{error}</div>}
-
-        {record && (
-          <section className="card">
-            <div className="patient-head">
-              <div className="avatar">{(record.patient.full_name || "?").charAt(0)}</div>
-              <div>
-                <h2>{record.patient.full_name}</h2>
-                <p className="muted">
-                  {record.patient.age} yrs · {record.patient.gender || "—"} · Blood {record.patient.blood_group || "—"}
-                </p>
-                <p className="cardid">{record.patient.health_card_id}</p>
+                <button
+                  className="scan-btn"
+                  onClick={() => setShowScanner(true)}
+                >
+                  Scan QR
+                </button>
               </div>
-            </div>
+              <p className="hint">In the live product, this comes from a QR scan.</p>
+            </section>
 
-            <div className="cols">
-              <div>
-                <h3>Medical History</h3>
-                {record.medical_history.length === 0 && <p className="muted">No history on record.</p>}
-                {record.medical_history.map((h, i) => (
-                  <div className="row-item" key={i}>
-                    <strong>{h.disease_name}</strong>
-                    <span className="muted">
-                      {h.diagnosis_date || ""}{h.hospital_name ? ` · ${h.hospital_name}` : ""}
-                    </span>
+            {error && <div className="error">{error}</div>}
+
+            {record && (
+              <section className="card">
+                <div className="patient-head">
+                  <div className="avatar">{(record.patient.full_name || "?").charAt(0)}</div>
+                  <div>
+                    <h2>{record.patient.full_name}</h2>
+                    {record.patient.allergies && (
+                      <div className="allergy-banner">
+                        ⚠ Allergies: {record.patient.allergies}
+                      </div>
+                    )}
+                    <p className="muted">
+                      {record.patient.age} yrs · {record.patient.gender || "—"} · Blood {record.patient.blood_group || "—"}
+                    </p>
+                    <p className="cardid">{record.patient.health_card_id}</p>
                   </div>
-                ))}
-              </div>
-              <div>
-                <h3>Current Medications</h3>
-                {record.current_medications.length === 0 && <p className="muted">None recorded.</p>}
-                {record.current_medications.map((m, i) => (
-                  <div className="row-item" key={i}>
-                    <strong>{m.medicine_name}</strong>
-                    <span className="muted">
-                      {m.dosage || ""}{m.frequency ? ` · ${m.frequency}` : ""}{m.status ? ` · ${m.status}` : ""}
-                    </span>
+                </div>
+
+                <div className="cols">
+                  <div>
+                    <h3>Medical History</h3>
+                    {record.medical_history.length === 0 && <p className="muted">No history on record.</p>}
+                    {record.medical_history.map((h, i) => (
+                      <div className="row-item" key={i}>
+                        <strong>{h.disease_name}</strong>
+                        <span className="muted">
+                          {h.diagnosis_date || ""}{h.hospital_name ? ` · ${h.hospital_name}` : ""}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div>
+                    <h3>Current Medications</h3>
+                    {record.current_medications.length === 0 && <p className="muted">None recorded.</p>}
+                    {record.current_medications.map((m, i) => (
+                      <div className="row-item" key={i}>
+                        <strong>{m.medicine_name}</strong>
+                        <span className="muted">
+                          {m.dosage || ""}{m.frequency ? ` · ${m.frequency}` : ""}{m.status ? ` · ${m.status}` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="generate">
-              <label>Current Symptoms</label>
-              <textarea
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="e.g. chest pain and shortness of breath"
-                rows={2}
-              />
-              <button className="primary" onClick={handleGenerate} disabled={loadingReport}>
-                {loadingReport ? "Generating…" : "Generate AI Report"}
-              </button>
-            </div>
-          </section>
-        )}
-
-        {record && <Timeline record={record} />}
-
-        {report && (
-          <section className="card">
-            <div className="report-head">
-              <h2>AI Continuity-of-Care Report</h2>
-              <span className={`risk risk-${(report.risk_level || "LOW").toLowerCase()}`}>
-                Risk: {report.risk_level}
-              </span>
-            </div>
-
-            <div className="lang-row">
-              {LANGUAGES.map((lang) => (
-            <button
-              key={lang}
-              className={`lang-pill ${activeLang === lang ? "active" : ""}`}
-              onClick={() => handleTranslate(lang)}
-              disabled={translating}
-            >
-              {lang}
-            </button>
-        ))}
-</div>
-
-<p className="summary">
-  {translating
-    ? "Translating…"
-    : activeLang === "English"
-      ? report.summary
-      : translatedSummary || report.summary}
-</p>
-
-            {report.drug_interactions?.length > 0 && (
-              <div className="alert">
-                <h4>⚠ Drug Interactions</h4>
-                {report.drug_interactions.map((d, i) => (
-                  <p key={i}>{Array.isArray(d.pair) ? d.pair.join(" + ") : ""} — {d.risk}</p>
-                ))}
-              </div>
+                <div className="generate">
+                  <label>Current Symptoms</label>
+                  <textarea
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                    placeholder="e.g. chest pain and shortness of breath"
+                    rows={2}
+                  />
+                  <button className="primary" onClick={handleGenerate} disabled={loadingReport}>
+                    {loadingReport ? "Generating…" : "Generate AI Report"}
+                  </button>
+                </div>
+              </section>
             )}
 
-            <div className="report-grid">
-              <ReportList title="Relevant History" items={report.relevant_history} />
-              <ReportList title="Red Flags" items={report.red_flags} flag />
-              <ReportList title="Suggested Tests" items={report.suggested_tests} />
-              <ReportList title="Current Medications" items={report.current_medications} />
-            </div>
+            {record && <Timeline record={record} />}
 
-            <p className="disclaimer">
-              AI-generated decision support for clinician review — not a diagnosis.
-            </p>
-          </section>
+            {report && (
+              <section className="card">
+                <div className="report-head">
+                  <h2>AI Continuity-of-Care Report</h2>
+                  <span className={`risk risk-${(report.risk_level || "LOW").toLowerCase()}`}>
+                    Risk: {report.risk_level}
+                  </span>
+                </div>
+
+                <div className="lang-row">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang}
+                      className={`lang-pill ${activeLang === lang ? "active" : ""}`}
+                      onClick={() => handleTranslate(lang)}
+                      disabled={translating}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+
+                <p className="summary">
+                  {translating
+                    ? "Translating…"
+                    : activeLang === "English"
+                      ? report.summary
+                      : translatedSummary || report.summary}
+                </p>
+
+                {report.drug_interactions?.length > 0 && (
+                  <div className="alert">
+                    <h4>⚠ Drug Interactions</h4>
+                    {report.drug_interactions.map((d, i) => (
+                      <p key={i}>
+                        {Array.isArray(d.pair) ? d.pair.join(" + ") : ""} — {translatedReport?.interaction_risks?.[i] || d.risk}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {report.allergy_alerts?.length > 0 && (
+                  <div className="alert">
+                    <h4>⚠ Allergy Alerts</h4>
+                    {(translatedReport?.allergy_alerts || report.allergy_alerts).map((a, i) => <p key={i}>{a}</p>)}
+                  </div>
+                )}
+
+                <div className="report-grid">
+                  <ReportList title="Relevant History"
+                    items={translatedReport?.relevant_history || report.relevant_history} />
+                  <ReportList title="Red Flags"
+                    items={translatedReport?.red_flags || report.red_flags} flag />
+                  <ReportList title="Suggested Tests"
+                    items={translatedReport?.suggested_tests || report.suggested_tests} />
+                  <ReportList title="Current Medications"
+                    items={report.current_medications} />  {/* deliberately NOT translated — drug names stay English */}
+                </div>
+
+                <p className="disclaimer">
+                  AI-generated decision support for clinician review — not a diagnosis.
+                </p>
+              </section>
+            )}
+          </>
         )}
       </main>
     </div>
@@ -309,6 +364,11 @@ function PatientView({ profile }) {
         <div className="avatar">{(record.patient.full_name || "?").charAt(0)}</div>
         <div>
           <h2>{record.patient.full_name}</h2>
+          {record.patient.allergies && (
+            <div className="allergy-banner">
+              ⚠ Allergies: {record.patient.allergies}
+            </div>
+          )}
           <p className="muted">{record.patient.age} yrs · {record.patient.gender || "—"}</p>
           <p className="cardid">{record.patient.health_card_id}</p>
         </div>
@@ -320,7 +380,7 @@ function PatientView({ profile }) {
             <div className="row-item" key={i}>
               <strong>{h.disease_name}</strong>
               <span className="muted">
-                {[h.diagnosis_date, h.hospital_name].filter(Boolean).join(" ")}
+                {[h.diagnosis_date, h.hospital_name].filter(Boolean).join(" · ")}
               </span>
             </div>
           ))}

@@ -29,6 +29,8 @@ def run_pipeline(health_card_id, query):
     result = {
         "summary":           raw_response.get("summary", ""),
         "relevant_history":  raw_response.get("relevant_history", []),
+        "allergies": context.get("patient", {}).get("allergies", []),
+        "allergy_alerts": raw_response.get("allergy_alerts", []),
         "current_medications": [m.get("name", "") for m in context.get("medications", [])],
         "red_flags":         raw_response.get("red_flags", []),
         "suggested_tests":   raw_response.get("suggested_tests", []),

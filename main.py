@@ -14,7 +14,11 @@ from database import (
 )
 
 from translator import translate_text
+from translator import translate_record
 from pydantic import BaseModel
+
+from synthetic_surveillance import generate_cases
+from surveillance_engine import detect_anomalies, build_trend
 
 app = FastAPI(title="Saarthi — Continuity of Care API")
 
@@ -31,6 +35,10 @@ app.add_middleware(
 
 class TranslateRequest(BaseModel):
     text: str
+    target_language: str
+    
+class RecordTranslateRequest(BaseModel):
+    payload: dict
     target_language: str
 
 @app.post("/analyze", response_model=AnalyzeResponse)
@@ -71,6 +79,7 @@ def get_patient_record(card_id: str):
             "gender": patient.get("gender"),
             "blood_group": patient.get("blood_group"),
             "phone": patient.get("phone"),
+            "allergies": patient.get("allergies"),
         },
         "medical_history": history,
         "current_medications": medications,
@@ -79,3 +88,30 @@ def get_patient_record(card_id: str):
 @app.post("/translate")
 def translate(req: TranslateRequest):
     return {"status": "success", "translated": translate_text(req.text, req.target_language)}
+
+@app.post("/translate-record")
+def translate_record_endpoint(req: RecordTranslateRequest):
+    return {"status": "success", "translated": translate_record(req.payload, req.target_language)}
+
+@app.get("/surveillance")
+def surveillance():
+    records = generate_cases()
+    alerts = detect_anomalies(records)
+
+    # attach a trend line to each alert for charting
+    for a in alerts:
+        a["trend"] = build_trend(records, a["settlement"], a["symptom"])
+
+    # settlement totals for an overview panel
+    totals = {}
+    for r in records:
+        totals[r["settlement"]] = totals.get(r["settlement"], 0) + r["count"]
+
+    return {
+        "status": "success",
+        "synthetic": True,   # honesty flag, surfaced in the UI
+        "alerts": alerts,
+        "settlement_totals": totals,
+        "monitored_settlements": len(set(r["settlement"] for r in records)),
+        "monitored_symptoms": len(set(r["symptom"] for r in records)),
+    }

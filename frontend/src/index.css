@@ -91,3 +91,33 @@ button.primary { background: var(--teal); margin-top: 12px; }
 .tl-tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
 .tl-diagnosis .tl-tag { color: var(--primary); }
 .tl-medication .tl-tag { color: var(--teal); }
+
+.topnav { display: flex; gap: 6px; margin-left: 32px; }
+.navbtn { background: rgba(255,255,255,0.1); color: #cbd0ee; font-size: 13px; padding: 8px 14px; }
+.navbtn.active { background: var(--teal); color: #fff; }
+
+.synthetic-banner { background: #fdf6e3; border: 1px solid #f0e0b0; color: #8a6d1a; font-size: 13px; padding: 10px 16px; border-radius: 10px; margin-bottom: 20px; }
+.surv-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-box { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+.stat-num { font-size: 30px; font-weight: 700; color: var(--primary-deep); }
+.stat-label { font-size: 13px; color: var(--muted); }
+.alert-count .stat-num { color: var(--danger); }
+.surv-h { font-size: 16px; margin: 24px 0 12px; }
+
+.alert-card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.sev { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 14px; }
+.sev-high { background: #fdecec; color: var(--danger); }
+.sev-moderate { background: var(--amber-bg); color: var(--amber); }
+.alert-card-head h4 { margin-top: 8px; font-size: 17px; }
+.alert-metrics { display: flex; gap: 18px; text-align: center; }
+.alert-metrics strong { display: block; font-size: 18px; color: var(--primary-deep); }
+.alert-metrics span { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.alert-note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+.bar-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.bar-label { width: 90px; font-size: 14px; }
+.bar-track { flex: 1; height: 10px; background: #eef0fb; border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--primary); border-radius: 6px; }
+.bar-val { width: 36px; text-align: right; font-size: 13px; color: var(--muted); }
+
+.allergy-banner { background: #fdecec; border: 1px solid #f6c9c9; color: var(--danger); font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 10px; margin: 14px 0; }

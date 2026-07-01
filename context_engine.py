@@ -40,14 +40,29 @@ def build_context(health_card_id):
     raw_history = get_history(patient_uuid) if patient_uuid else []
     raw_meds = get_current_medications(patient_uuid) if patient_uuid else []
 
-    history = [{"disease_name": h.get("disease_name", "")} for h in raw_history]
+    history = [
+        {
+            "disease_name": h.get("disease_name", ""),
+            "diagnosis_date": h.get("diagnosis_date", ""),
+        }
+        for h in raw_history
+    ]
     medications = [{"name": m.get("medicine_name", "")} for m in raw_meds]
+    
+    raw_allergies = patient.get("allergies") or ""
+
+    allergies = [
+        allergy.strip()
+        for allergy in raw_allergies.split(",")
+        if allergy.strip()
+    ]
 
     return {
         "patient_id": patient_uuid,
         "patient": {
             "full_name": patient.get("full_name", "Unknown"),
             "age": patient.get("age", "Unknown"),
+            "allergies": allergies,
         },
         "history": history,
         "medications": medications,
