@@ -42,29 +42,34 @@ The system has three layers: a **React client** (login, doctor console, patient 
 
 ## Project Structure
 
-Saarthi/
-├── main.py                    # FastAPI app + endpoints
-├── pipeline_engine.py         # Orchestrates the continuity pipeline
-├── context_engine.py          # Reads & normalizes records from Supabase
-├── prompt_builder.py          # Builds the timeline-aware, allergy-aware prompt
-├── groq_client.py             # Groq LLM calls (JSON mode)
-├── risk_engine.py             # Deterministic risk scoring
-├── interaction_engine.py      # Deterministic drug-interaction checks
-├── surveillance_engine.py     # Z-score outbreak detection
-├── synthetic_surveillance.py  # Synthetic case-count generator
-├── translator.py              # Multilingual translation
-├── database.py                # Supabase client + queries
-├── models.py                  # Pydantic request/response models
-├── requirements.txt
-└── frontend/                  # React + Vite app
-└── src/
-├── App.jsx            # Main app, role routing, doctor console
-├── Login.jsx          # Supabase auth
-├── Surveillance.jsx   # Outbreak dashboard
-├── QrScanner.jsx      # QR card scanning
-├── api.js             # Backend API calls
-└── supabase.js        # Supabase client (auth)
+## Project Structure
 
+```text
+Saarthi/
+├── main.py                  # FastAPI app + endpoints
+├── pipeline_engine.py       # Orchestrates the continuity pipeline
+├── context_engine.py        # Reads & normalizes records from Supabase
+├── prompt_builder.py        # Builds the timeline-aware prompt
+├── groq_client.py           # Groq LLM calls (JSON mode)
+├── risk_engine.py           # Deterministic risk scoring
+├── interaction_engine.py    # Drug interaction checks
+├── surveillance_engine.py   # Z-score outbreak detection
+├── synthetic_surveillance.py# Synthetic case-count generator
+├── translator.py            # Multilingual translation
+├── database.py              # Supabase client & queries
+├── models.py                # Pydantic request/response models
+├── requirements.txt
+└── frontend/
+    ├── src/
+    │   ├── App.jsx          # Main app & doctor console
+    │   ├── Surveillance.jsx # Outbreak dashboard
+    │   ├── Login.jsx        # Authentication
+    │   ├── QrScanner.jsx    # QR card scanner
+    │   ├── api.js           # Backend API calls
+    │   └── supabase.js      # Supabase client
+    ├── public/
+    └── package.json
+```
 ---
 
 ## Getting Started
