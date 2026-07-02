@@ -28,7 +28,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://saarthi-ecru-six.vercel.app",  # Allowed your deployed Vercel frontend
+        "https://saarthi-3ytp.onrender.com",  # Allowed your deployed Vercel frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
